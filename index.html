@@ -51,6 +51,17 @@ tr:nth-child(even) { background: #FAFBFC; }
 .bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; }
 .bar-val { position: absolute; right: 8px; top: 2px; font-size: 11px; font-weight: 600; color: #334155; }
 .county-panel { background: #fff; border-radius: 14px; border: 1px solid #E2E8F0; padding: 24px; }
+.county-dropdown { position: relative; }
+.county-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 8px; border: 1px solid #CBD5E1; background: #fff; font-size: 13px; color: #334155; cursor: pointer; font-family: 'DM Sans', sans-serif; white-space: nowrap; min-width: 170px; }
+.county-btn:hover { border-color: #94A3B8; }
+.county-menu { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 200; background: #fff; border: 1px solid #CBD5E1; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.14); min-width: 200px; max-height: 280px; overflow-y: auto; }
+.county-menu.open { display: block; }
+.county-menu-header { display: flex; gap: 6px; padding: 8px 10px; border-bottom: 1px solid #E2E8F0; position: sticky; top: 0; background: #fff; }
+.county-menu-header button { font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid #CBD5E1; background: #F8FAFC; color: #475569; cursor: pointer; }
+.county-menu-header button:hover { background: #E2E8F0; }
+.county-opt { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 13px; color: #334155; cursor: pointer; }
+.county-opt:hover { background: #F1F5F9; }
+.county-opt input[type=checkbox] { accent-color: #3B82F6; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
 .note { margin-top: 12px; padding: 14px 18px; background: #FFFBEB; border-radius: 10px; border: 1px solid #FDE68A; font-size: 12px; color: #92400E; }
 details { margin-top: 20px; background: #fff; border-radius: 14px; border: 1px solid #E2E8F0; overflow: hidden; }
 summary { padding: 16px 20px; cursor: pointer; font-size: 14px; font-weight: 700; color: #0F172A; user-select: none; list-style: none; }
@@ -79,7 +90,8 @@ const ALL_DATA = RAW.rows.map(r => ({
 const COUNTIES = RAW.counties;
 const PAGE_SIZE = 25;
 
-let state = { county: "All", grade: "All", schoolType: "All", schoolLevel: "All", sortBy: "risk", search: "", view: "table", page: 0 };
+let countyMenuOpen = false;
+let state = { counties: [], grade: "All", schoolType: "All", schoolLevel: "All", sortBy: "risk", search: "", view: "table", page: 0 };
 
 function risk(pct) {
   if (pct >= 95) return ["Low Risk","badge-low"];
@@ -99,7 +111,7 @@ function pctColor(p) {
 
 function getFiltered() {
   let d = ALL_DATA;
-  if (state.county !== "All") d = d.filter(s => s.county === state.county);
+  if (state.counties.length > 0) d = d.filter(s => state.counties.includes(s.county));
   if (state.grade !== "All") d = d.filter(s => s.grade === state.grade);
   if (state.schoolType !== "All") d = d.filter(s => s.type === state.schoolType);
   if (state.schoolLevel !== "All") d = d.filter(s => s.level === state.schoolLevel);
@@ -126,10 +138,10 @@ function render() {
 <p class="subtitle">2024\u201325 School Year \u00b7 Identify high-risk schools with low measles immunization rates</p>
 <div class="filters">
 <input type="text" placeholder="Search school, district, city..." value="${state.search}" oninput="setState({search:this.value,page:0})">
-<select onchange="setState({county:this.value,page:0})">
-<option value="All"${state.county==="All"?" selected":""}>All Counties (${COUNTIES.length})</option>
-${COUNTIES.map(c=>`<option value="${c}"${state.county===c?" selected":""}>${c}</option>`).join("")}
-</select>
+<div class="county-dropdown" onclick="event.stopPropagation()">
+<button class="county-btn" onclick="toggleCountyMenu()">${state.counties.length===0?`All Counties (${COUNTIES.length})`:`${state.counties.length} count${state.counties.length===1?"y":"ies"} selected`} <span style="font-size:10px">&#9660;</span></button>
+<div class="county-menu${countyMenuOpen?" open":""}"><div class="county-menu-header"><button onclick="selectAllCounties()">Select All</button><button onclick="clearCountyFilter()">Clear</button></div>${COUNTIES.map(c=>`<label class="county-opt"><input type="checkbox"${state.counties.includes(c)?" checked":""} onchange="toggleCounty('${c}')"><span>${c}</span></label>`).join("")}</div>
+</div>
 <select onchange="setState({grade:this.value,page:0})">
 <option value="All"${state.grade==="All"?" selected":""}>All Records</option>
 <option value="Kindergarten"${state.grade==="Kindergarten"?" selected":""}>Kindergarten</option>
@@ -253,6 +265,34 @@ function setState(updates) {
   Object.assign(state, updates);
   render();
 }
+
+function toggleCountyMenu() {
+  countyMenuOpen = !countyMenuOpen;
+  render();
+}
+
+function toggleCounty(county) {
+  const next = state.counties.includes(county)
+    ? state.counties.filter(c => c !== county)
+    : [...state.counties, county];
+  countyMenuOpen = true;
+  setState({counties: next, page: 0});
+}
+
+function selectAllCounties() {
+  countyMenuOpen = true;
+  setState({counties: COUNTIES.slice(), page: 0});
+}
+
+function clearCountyFilter() {
+  countyMenuOpen = true;
+  setState({counties: [], page: 0});
+}
+
+document.addEventListener('click', function() {
+  if (countyMenuOpen) { countyMenuOpen = false; render(); }
+});
+
 render();
 </script>
 </body>
