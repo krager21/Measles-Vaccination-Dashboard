@@ -181,7 +181,7 @@ function render() {
 
   if (state.view === "table") {
     h += `<div class="table-wrap"><div style="overflow-x:auto"><table><thead><tr>
-    <th>School</th><th>District</th><th>County</th><th>Level</th><th>Type</th><th>Grade</th><th>Enrolled</th><th>Complete %</th><th>Exempt</th><th>Out of Compliance</th><th>Risk</th>
+    <th>School</th><th>District</th><th>County</th><th>Level</th><th>Type</th><th>Grade</th><th>Enrolled</th><th>Complete %</th><th>Conditional</th><th>Exempt</th><th>Out of Compliance</th><th>Risk</th>
     </tr></thead><tbody>`;
     for (const s of paged) {
       const [rl, rc] = risk(s.completePct);
@@ -194,6 +194,7 @@ function render() {
       <td style="color:#475569;font-size:12px">${s.grade}</td>
       <td style="font-weight:600;color:#334155;text-align:right">${s.enrollment}</td>
       <td style="font-weight:700;text-align:right;color:${pctColor(s.completePct)}">${s.completePct.toFixed(1)}%</td>
+      <td style="text-align:right;color:${s.conditional>0?"#D97706":"#94A3B8"};font-weight:${s.conditional>0?600:400}">${s.conditional}</td>
       <td style="text-align:right;color:${s.exempt>0?"#DC2626":"#94A3B8"};font-weight:${s.exempt>0?600:400}">${s.exempt}</td>
       <td style="text-align:right;color:${s.outOfCompliance>0?"#D97706":"#94A3B8"};font-weight:${s.outOfCompliance>0?600:400}">${s.outOfCompliance}</td>
       <td><span class="badge ${rc}">${rl}</span></td>
